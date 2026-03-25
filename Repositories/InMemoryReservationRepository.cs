@@ -59,4 +59,10 @@ public class InMemoryReservationRepository : IReservationRepository
             .GroupBy(r => r.RoomType)
             .ToDictionary(g => g.Key, g => g.Count());
     }
+
+    public bool IsRoomAvailable(string roomId, DateTime checkIn, DateTime checkOut)
+    {
+        return !_reservations.Values
+            .Any(r => r.RoomId == roomId && r.CheckIn < checkOut && r.CheckOut > checkIn && r.Status != "Cancelled");
+    }
 }

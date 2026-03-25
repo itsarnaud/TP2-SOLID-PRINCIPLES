@@ -16,4 +16,5 @@ public interface IReservationRepository
     void Delete(string id);
     decimal GetTotalRevenue(DateTime from, DateTime to);
     Dictionary<string, int> GetOccupancyStats(DateTime from, DateTime to);
+    bool IsRoomAvailable(string roomId, DateTime checkIn, DateTime checkOut);
 }

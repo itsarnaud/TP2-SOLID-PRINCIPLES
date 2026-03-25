@@ -8,11 +8,23 @@ Console.WriteLine("=== Le Mas des Oliviers - Hotel Management System ===");
 Console.WriteLine();
 
 // ---------------------------------------------------------------
-// Scenario 1: Creating Reservations (uses ReservationService — SRP violation)
+// Scenario 1: Creating Reservations (uses ReservationService — SRP violation fixed)
 // ---------------------------------------------------------------
 Console.WriteLine("--- Scenario 1: Creating Reservations ---");
 
-var reservationService = new ReservationService();
+// Setup Repositories & Domain Service
+var reservationRepo = new InMemoryReservationRepository();
+var roomRepo = new InMemoryRoomRepository(reservationRepo);
+roomRepo.SeedRooms(new List<Room>
+{
+    new Room { Id = "101", Type = "Standard", MaxGuests = 2, PricePerNight = 80m },
+    new Room { Id = "102", Type = "Standard", MaxGuests = 2, PricePerNight = 80m },
+    new Room { Id = "201", Type = "Suite", MaxGuests = 2, PricePerNight = 200m },
+    new Room { Id = "301", Type = "Family", MaxGuests = 4, PricePerNight = 120m }
+});
+var domainService = new ReservationDomainService(reservationRepo);
+
+var reservationService = new ReservationService(reservationRepo, roomRepo, domainService);
 
 var id1 = reservationService.CreateReservation(
     "Alice Martin", "101", new DateTime(2025, 6, 15), new DateTime(2025, 6, 18),

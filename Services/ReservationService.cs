@@ -2,6 +2,7 @@ namespace HotelReservation.Services;
 
 using HotelReservation.Models;
 using HotelReservation.Infrastructure;
+using HotelReservation.Repositories;
 
 // SRP VIOLATION (Example 1): This class mixes three levels of concern:
 // - INFRASTRUCTURE: direct data access, logging
@@ -9,51 +10,35 @@ using HotelReservation.Infrastructure;
 // - APPLICATION: workflow orchestration
 public class ReservationService
 {
-    // INFRA: direct data storage
-    private static readonly Dictionary<string, Reservation> _reservations = new();
-    private static readonly List<Room> _rooms = new()
-    {
-        new Room { Id = "101", Type = "Standard", MaxGuests = 2, PricePerNight = 80m },
-        new Room { Id = "102", Type = "Standard", MaxGuests = 2, PricePerNight = 80m },
-        new Room { Id = "201", Type = "Suite", MaxGuests = 2, PricePerNight = 200m },
-        new Room { Id = "301", Type = "Family", MaxGuests = 4, PricePerNight = 120m }
-    };
+    private readonly IReservationRepository _reservationRepo;
+    private readonly IRoomRepository _roomsRepo;
+    private readonly ReservationDomainService _domainService;
 
-    private static int _counter = 0;
+    public ReservationService(IReservationRepository reservationRepo, IRoomRepository roomsRepo, ReservationDomainService domainService)
+    {
+        _reservationRepo = reservationRepo;
+        _roomsRepo = roomsRepo;
+        _domainService = domainService;
+    }
 
     public string CreateReservation(string guestName, string roomId, DateTime checkIn,
         DateTime checkOut, int guestCount, string roomType, string email)
     {
-        // INFRA: logging
         Console.WriteLine($"[LOG] Creating reservation for {guestName}...");
 
-        // BUSINESS: find room
-        var room = _rooms.FirstOrDefault(r => r.Id == roomId);
+        var room = _roomsRepo.GetById(roomId);
         if (room == null)
             throw new Exception($"Room {roomId} not found");
 
-        // BUSINESS: check capacity
-        if (guestCount > room.MaxGuests)
-            throw new Exception($"Room {roomId} max capacity is {room.MaxGuests}");
+        _domainService.ValidateReservation(room, guestCount, checkIn, checkOut);
 
-        // BUSINESS: check availability
-        var isAvailable = !_reservations.Values.Any(r =>
-            r.RoomId == roomId &&
-            r.Status != "Cancelled" &&
-            r.CheckIn < checkOut &&
-            r.CheckOut > checkIn);
-        if (!isAvailable)
-            throw new Exception($"Room {roomId} is not available for {checkIn:dd/MM} -> {checkOut:dd/MM}");
+        var total = _domainService.CalculateTotalPrice(room, checkIn, checkOut);
 
-        // BUSINESS: calculate price
-        var nights = (checkOut - checkIn).Days;
-        var total = nights * room.PricePerNight;
-
-        // APPLICATION: create and store
-        _counter++;
+        var counter = _reservationRepo.GetAll().Count + 1; 
+        
         var reservation = new Reservation
         {
-            Id = $"R-{_counter:D3}",
+            Id = $"R-{counter:D3}",
             GuestName = guestName,
             RoomId = roomId,
             CheckIn = checkIn,
@@ -64,9 +49,9 @@ public class ReservationService
             Email = email,
             TotalPrice = total
         };
-        _reservations[reservation.Id] = reservation;
+        
+        _reservationRepo.Add(reservation);
 
-        // INFRA: logging
         Console.WriteLine($"[LOG] Reservation {reservation.Id} created.");
 
         return reservation.Id;
@@ -74,19 +59,41 @@ public class ReservationService
 
     public Reservation? GetReservation(string id)
     {
-        return _reservations.TryGetValue(id, out var r) ? r : null;
+        return _reservationRepo.GetById(id);
     }
 
     public List<Reservation> GetAllReservations()
     {
-        return _reservations.Values.ToList();
-    }
-
-    public static List<Room> GetRooms() => _rooms;
-
-    public static void Reset()
-    {
-        _reservations.Clear();
-        _counter = 0;
+        return _reservationRepo.GetAll();
     }
 }
+
+public class ReservationDomainService
+{
+    private readonly IReservationRepository _reservationRepo;
+
+    public ReservationDomainService(IReservationRepository reservationRepo)
+    {
+        _reservationRepo = reservationRepo;
+    }
+
+    public void ValidateReservation(Room room, int guestCount, DateTime checkIn, DateTime checkOut)
+    {
+        if (guestCount > room.MaxGuests)
+            throw new Exception($"Room {room.Id} max capacity is {room.MaxGuests}");
+
+        // On vérifie s'il y a déjà une réservation pour cette chambre sur ces dates
+        var overlappingReservations = _reservationRepo.GetByDateRange(checkIn, checkOut)
+                                        .Where(r => r.RoomId == room.Id && r.Status != "Cancelled");
+
+        if (overlappingReservations.Any())
+            throw new Exception($"Room {room.Id} is not available for {checkIn:dd/MM} -> {checkOut:dd/MM}");
+    }
+
+    public decimal CalculateTotalPrice(Room room, DateTime checkIn, DateTime checkOut)
+    {
+        var nights = (checkOut - checkIn).Days;
+        return nights * room.PricePerNight;
+    }
+}
+
