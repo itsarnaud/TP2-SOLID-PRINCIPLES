@@ -26,40 +26,4 @@ public class Reservation
             throw new InvalidOperationException("Cannot cancel after check-in");
         Status = "Cancelled";
     }
-
-    // Actor: ACCOUNTANT — pricing rules (TVA, tourist tax)
-    public decimal CalculateTotal()
-    {
-        var nights = (CheckOut - CheckIn).Days;
-        var pricePerNight = RoomType switch
-        {
-            "Standard" => 80m,
-            "Suite" => 200m,
-            "Family" => 120m,
-            _ => 0m
-        };
-        var subtotal = nights * pricePerNight;
-        var tva = subtotal * 0.10m;
-        var touristTax = GuestCount * nights * 1.50m;
-        return subtotal + tva + touristTax;
-    }
-
-    // Actor: HOUSEKEEPER — linen change schedule
-    public List<DateTime> GetLinenChangeDays()
-    {
-        var days = new List<DateTime>();
-        var current = CheckIn.AddDays(3);
-        while (current < CheckOut)
-        {
-            days.Add(current);
-            current = current.AddDays(3);
-        }
-        return days;
-    }
-
-    // Actor: ACCOUNTANT — invoice format
-    public string GenerateInvoiceLine()
-    {
-        return $"{GuestName} | {CheckIn:dd/MM} -> {CheckOut:dd/MM} | {CalculateTotal():F2} EUR";
-    }
 }

@@ -47,9 +47,10 @@ public class InMemoryReservationRepository : IReservationRepository
 
     public decimal GetTotalRevenue(DateTime from, DateTime to)
     {
+        var calculator = new Services.BillingCalculator();
         return _reservations.Values
             .Where(r => r.CheckIn >= from && r.CheckOut <= to && r.Status != "Cancelled")
-            .Sum(r => r.CalculateTotal());
+            .Sum(r => calculator.CalculateTotal(r));
     }
 
     public Dictionary<string, int> GetOccupancyStats(DateTime from, DateTime to)
