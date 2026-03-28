@@ -16,7 +16,7 @@ Le principe SRP stipule qu'une classe ou un module doit avoir une seule raison d
 - Dans `CheckInService`, les détails techniques ont été isolés dans des sous-méthodes pour maintenir la méthode principale à un seul niveau d'abstraction.
 - Depuis le modèle `Reservation`, on a extrait `BillingCalculator` pour le comptable et `HousekeepingScheduler` pour la gouvernante, laissant la classe `Reservation` avec uniquement ses propres données et son cycle de vie.
 
-**Bénéfice (Maintenabilité)** :
+**Bénéfice :**
 Si le comptable demande une modification du taux de TVA, on ne risque plus de casser ou parasiter le code relatif au planning de ménage de la gouvernante. Chaque besoin métier a un endroit précis où il est pris en charge, ce qui limite fortement les effets de bord indésirables.
 
 ## OCP
@@ -34,3 +34,18 @@ Dans le code fourni, plusieurs implémentations respectent déjà ce principe gr
 
 **Solution appliquée :**
 Nous avons refactoré `CancellationService` en appliquant le pattern **Strategy**. Nous avons extrait une interface `ICancellationPolicy` avec une méthode de calcul. Chaque règle d'annulation (`FlexiblePolicy`, `StrictPolicy`, etc.) possède désormais sa propre classe implémentant cette interface. `CancellationService` reçoit la bonne interface de l'extérieur sans avoir à connaître les détails internes de chaque règle.
+
+## LSP (Liskov Substitution Principle)
+
+**Problèmes identifiés :**
+
+- **Violation technique** : La classe `NonRefundableReservation` implémentait l'interface `ICancellable` mais levait une exception `InvalidOperationException` lors de l'appel à `Cancel()`. N'importe quel code appelant `Cancel()` sur une politique stricte explosait au runtime.
+- **Violation sémantique** : Le `CachedRoomRepository` prétendait rechercher des chambres disponibles entre deux dates (`GetAvailableRooms`) mais ignorait les paramètres de date. De plus, sa méthode `Save` n'invalidait pas le cache, renvoyant des données potentiellement périmées.
+
+**Solutions appliquées :**
+
+- **Correction technique** : J'ai revu la hiérarchie d'interfaces. J'ai créé une interface de base `IReservation` (sans la méthode Cancel) pour `NonRefundableReservation`, et une sous-interface `ICancellableReservation` pour la `FlexibleReservation`. Le compilateur empêche désormais l'erreur car la méthode n'existe plus sur l'objet strict.
+- **Correction sémantique** : J'ai modifié `CachedRoomRepository` pour déléguer les requêtes complexes sur dates au dépôt interne (`_inner.GetAvailableRooms`), et J'ai forcé le retrait d'une chambre du cache lors de sa sauvegarde (`_cache.Remove`).
+
+**Bénéfice :**
+Les développeurs peuvent utiliser le polymorphisme en toute confiance. Si une fonction demande un `IReservation`, on sait formellement qu'on ne risque pas de crasher ou d'avoir des comportements malicieux cachés à l'intérieur d'une de ses dérivées.
