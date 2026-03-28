@@ -2,7 +2,7 @@ namespace HotelReservation.Repositories;
 
 using HotelReservation.Models;
 
-public class InMemoryReservationRepository : IReservationRepository
+public class InMemoryReservationRepository : IReservationWriteRepository, IReservationReadRepository, IReservationStatsRepository
 {
     private readonly Dictionary<string, Reservation> _reservations = new();
 

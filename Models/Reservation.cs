@@ -1,11 +1,13 @@
 namespace HotelReservation.Models;
 
+using HotelReservation.Interfaces;
+
 // SRP VIOLATION (Example 3): This class serves THREE actors:
 // - Receptionist: lifecycle (Cancel, Status management)
 // - Accountant: billing (CalculateTotal, GenerateInvoiceLine)
 // - Housekeeper: cleaning schedule (GetLinenChangeDays)
 
-public class Reservation
+public class Reservation : IBillableStay
 {
     public string Id { get; set; } = string.Empty;
     public string GuestName { get; set; } = string.Empty;

@@ -1,11 +1,21 @@
 namespace HotelReservation.Interfaces;
 
-// ISP VIOLATION: BookingService only sends emails, HousekeepingService only
-// sends SMS, yet both depend on this interface with 4 methods.
-public interface INotificationService
+public interface IEmailNotificationService
 {
     void SendEmail(string to, string subject, string body);
+}
+
+public interface ISmsNotificationService
+{
     void SendSms(string phoneNumber, string message);
+}
+
+public interface IPushNotificationService
+{
     void SendPushNotification(string deviceId, string message);
+}
+
+public interface ISendSlackMessageNotificationService
+{
     void SendSlackMessage(string channel, string message);
 }

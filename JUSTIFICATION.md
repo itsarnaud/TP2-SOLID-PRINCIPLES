@@ -49,3 +49,22 @@ Nous avons refactoré `CancellationService` en appliquant le pattern **Strategy*
 
 **Bénéfice :**
 Les développeurs peuvent utiliser le polymorphisme en toute confiance. Si une fonction demande un `IReservation`, on sait formellement qu'on ne risque pas de crasher ou d'avoir des comportements malicieux cachés à l'intérieur d'une de ses dérivées.
+
+## ISP (Interface Segregation Principle)
+
+Le principe de ségrégation des interfaces (ISP) stipule qu'aucun client ne devrait être forcé de dépendre de méthodes qu'il n'utilise pas. Il vaut mieux avoir plusieurs petites interfaces spécifiques qu'une seule "grosse" interface généraliste.
+
+**Problèmes identifiés :**
+
+- `INotificationService` forçait toute classe d'envoi à supporter l'email, le SMS, le Push, et Slack, même si cette classe ne servait (par exemple) qu'à envoyer des SMS.
+- `IReservationRepository` était une interface monolithique qui mélangeait la lecture, l'écriture et les statistiques. Un service de facturation voyait qu'il était techniquement possible de supprimer une réservation.
+- `InvoiceGenerator` dépendait de l'objet complet `Reservation`, le rendant vulnérable aux changements de statut qui n'ont rien à voir avec la facturation.
+
+**Solutions appliquées :**
+
+- `INotificationService` a été scindé en 4 petites interfaces (une par médium).
+- `IReservationRepository` a été découpé selon le pattern CQRS (ReadRepository, WriteRepository, StatsRepository). Le `ReservationService` dépend désormais de la bonne partie du contrat (Read pour la validation, Write pour la sauvegarde).
+- `InvoiceGenerator` prend désormais une interface `IBillableStay` plus légère qui ne contient que les informations tarifaires et date d'une réservation.
+
+**Bénéfice (Maintenabilité) :**
+La sécurité et la lisibilité sont accrues : nous appliquons le least privilege. Quand un développeur demande une interface précise, l'IDE (IntelliSense) ne lui propose plus de méthodes hors de son champ de compétence, réduisant considérablement la surface des bugs.

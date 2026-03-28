@@ -5,9 +5,9 @@ using HotelReservation.Models;
 public class InMemoryRoomRepository : IRoomRepository
 {
     private readonly Dictionary<string, Room> _rooms = new();
-    private readonly IReservationRepository _reservationRepo;
+    private readonly IReservationReadRepository _reservationRepo;
 
-    public InMemoryRoomRepository(IReservationRepository reservationRepo)
+    public InMemoryRoomRepository(IReservationReadRepository reservationRepo)
     {
         _reservationRepo = reservationRepo;
     }

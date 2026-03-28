@@ -24,7 +24,7 @@ roomRepo.SeedRooms(new List<Room>
 });
 var domainService = new ReservationDomainService(reservationRepo);
 
-var reservationService = new ReservationService(reservationRepo, roomRepo, domainService);
+var reservationService = new ReservationService(reservationRepo, reservationRepo, roomRepo, domainService);
 
 var id1 = reservationService.CreateReservation(
     "Alice Martin", "101", new DateTime(2025, 6, 15), new DateTime(2025, 6, 18),
