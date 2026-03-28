@@ -68,3 +68,20 @@ Le principe de ségrégation des interfaces (ISP) stipule qu'aucun client ne dev
 
 **Bénéfice (Maintenabilité) :**
 La sécurité et la lisibilité sont accrues : nous appliquons le least privilege. Quand un développeur demande une interface précise, l'IDE (IntelliSense) ne lui propose plus de méthodes hors de son champ de compétence, réduisant considérablement la surface des bugs.
+
+## DIP (Dependency Inversion Principle)
+
+Le principe d'inversion des dépendances stipule que les modules de haut niveau (règles métier) ne doivent pas dépendre des modules de bas niveau (infrastructure, base de données, mails), mais que tous deux doivent dépendre d'abstractions définies par le haut niveau.
+
+**Problèmes identifiés :**
+
+- `BookingService` faisait des appels directs vers `FileLogger` et `InMemoryReservationStore` via des mots-clés `new`. Une modification de base de données aurait nécessité de réécrire la logique métier.
+- `HousekeepingService` sollicitait en dur `EmailSender`, rendant impossible l'adaptation à un envoi par SMS sans modifier les algorithmes de la gouvernante.
+
+**Solutions appliquées :**
+
+- Dans chaque service métier, nous avons défini les contrats dont il avait besoin (`ILogger`, `IReservationRepository`, `ICleaningNotifier`) et demandé ces dépendances par le constructeur.
+- Nous avons créé un pattern Adapter dans l'infrastructure : `EmailCleaningNotifier` transforme l'appel abstrait du métier en un véritable envoi d'email via l'ancienne librairie.
+
+**Bénéfice (Maintenabilité) :**
+L'architecture devient "Plug and Play". Le cœur de l'application est préservé des changements technologiques. Demain, on peut passer d'une base SQL Server à MongoDB ou envoyer des alertes WhatsApp au lieu d'emails en créant simplement une nouvelle classe dans le dossier de l'infrastructure, sans jamais retoucher ni recompiler le code critique de la gestion des réservations.

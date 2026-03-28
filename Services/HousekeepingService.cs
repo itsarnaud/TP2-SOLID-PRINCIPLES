@@ -8,7 +8,12 @@ using HotelReservation.Models;
 public class HousekeepingService
 {
     // Direct dependency on concrete EmailSender
-    private readonly EmailSender _emailSender = new();
+    private readonly ICleaningNotifier _cleaningNotifier;
+
+    public HousekeepingService(ICleaningNotifier cleaningNotifier)
+    {
+        _cleaningNotifier = cleaningNotifier;
+    }
 
     public List<CleaningTask> GenerateLinenChangeSchedule(Reservation reservation)
     {
@@ -32,7 +37,7 @@ public class HousekeepingService
     public void NotifyHousekeeper(CleaningTask task)
     {
         // Coupled to email — can't switch to SMS without changing this code
-        _emailSender.Send(
+        _cleaningNotifier.NotifyCleaningDone(
             task.HousekeeperEmail,
             "New cleaning task",
             $"Room {task.RoomId} needs {task.Type} on {task.Date:dd/MM/yyyy}");
