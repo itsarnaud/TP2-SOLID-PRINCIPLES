@@ -193,25 +193,18 @@ Console.WriteLine();
 // Scenario 9: LSP Violation Demo
 // ---------------------------------------------------------------
 Console.WriteLine("--- Scenario 9: LSP Violation Demo ---");
-ICancellable flexibleRes = new FlexibleReservation
+ICancellableReservation flexibleRes = new FlexibleReservation
 {
     Id = "FLEX-001", GuestName = "Test Flexible", TotalPrice = 200m
 };
 flexibleRes.Cancel();
 Console.WriteLine($"[OK] Flexible reservation cancelled, refund: {flexibleRes.CalculateRefund():F2} EUR");
 
-ICancellable nonRefundableRes = new NonRefundableReservation
+IReservation nonRefundableRes = new NonRefundableReservation
 {
     Id = "NR-001", GuestName = "Test NonRefundable", TotalPrice = 200m
 };
-try
-{
-    nonRefundableRes.Cancel(); // This will throw!
-}
-catch (InvalidOperationException ex)
-{
-    Console.WriteLine($"[ERROR] LSP violation: {ex.Message}");
-}
+Console.WriteLine($"[OK] Created {nonRefundableRes.GuestName} reservation, but it has no Cancel() method!");
 Console.WriteLine();
 
 Console.WriteLine("=== End of Demo ===");
