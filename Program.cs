@@ -66,7 +66,17 @@ Console.WriteLine("--- Scenario 3: Cancellation ---");
 var cancellationService = new CancellationService();
 var aliceReservation = reservationService.GetReservation(id1)!;
 aliceReservation.CancellationPolicy = "Flexible";
-cancellationService.CancelReservation(aliceReservation, new DateTime(2025, 6, 10));
+
+ICancellationPolicy policy = aliceReservation.CancellationPolicy switch
+{
+    "Flexible" => new FlexiblePolicy(),
+    "Moderate" => new ModeratePolicy(),
+    "Strict" => new StrictPolicy(),
+    "NonRefundable" => new NonRefundablePolicy(),
+    _ => throw new ArgumentException()
+};
+
+cancellationService.CancelReservation(aliceReservation, new DateTime(2025, 6, 10), policy);
 Console.WriteLine();
 
 // ---------------------------------------------------------------
